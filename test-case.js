@@ -126,3 +126,21 @@ rs.on('readable',()=>{
   //   console.log(rs.length);
   // },1000);
 })
+
+
+//--- --- ---
+
+let fs = require('fs');
+let path = require('path');
+let WriteStream = require('./WriteStream.js');
+
+let ws = new WriteStream(path.join(__dirname,'2.txt'),{
+  highWaterMark:3
+});
+
+ws.write(1+'','utf8',()=>{
+  console.log('write ok');
+})
+
+ws.end('ok');
+// ws.write(2+'')

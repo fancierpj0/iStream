@@ -21,6 +21,8 @@ class WriteStream extends EventEmitter{
     this.needDrain = false;
 
     this.length = 0;
+
+    this.isEnd = false;
     //--- --- ---
     this.open();
   }
@@ -49,7 +51,9 @@ class WriteStream extends EventEmitter{
     })
   }
 
-  write(chunk,encoding=this.encoding,callback=()=>{}){
+  write(chunk,encoding=this.encoding,callback=()=>{},end){
+    if(this.isEnd)throw Error('write after end');
+    if(end) this.isEnd = true;    
     chunk = Buffer.isBuffer(chunk)?chunk:Buffer.from(chunk,encoding);
 
     this.length += chunk.length;
@@ -63,18 +67,19 @@ class WriteStream extends EventEmitter{
       this._write(chunk,()=>{
         callback();
         this.clearBuffer();
-      });
+      },end);
     }else{
       this.buffers.push({
         chunk
         ,callback
+        ,end
       });
     }
 
     return ret;
   }
 
-  _write(chunk,callback){
+  _write(chunk,callback,end){
     if(typeof this.fd !== 'number'){
       this.once('open',()=>this._write(chunk,callback));
       return;
@@ -93,7 +98,7 @@ class WriteStream extends EventEmitter{
       this._write(buf.chunk,()=>{
         buf.callback();
         this.clearBuffer();
-      });
+      },buf.end);
     }else{
       this.writing = false;
       if(this.needDrain){
@@ -103,6 +108,9 @@ class WriteStream extends EventEmitter{
     }
   }
 
+  end(chunk,encoding=this.encoding,callback=()=>{}){
+    this.write(chunk,encoding,callback,true);
+  }
 }
 
 module.exports = WriteStream;
