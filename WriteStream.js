@@ -27,14 +27,23 @@ class WriteStream extends EventEmitter{
     this.open();
   }
 
-  destroy(){
+  destroy(end){
     if(typeof this.fd !== 'number'){
       this.emit('close');
       return;
     }
-    fs.close(this.fd,(err)=>{
-      this.emit('close');
-    })
+    if(end){
+      fs.fsync(this.fd,(err)=>{
+        fs.close(this.fd,(err)=>{
+          this.emit('close');
+        });    
+      });
+    }else{
+      fs.close(this.fd,(err)=>{
+        this.emit('close');
+      });
+    }
+    
   }
 
   open(){
@@ -52,8 +61,9 @@ class WriteStream extends EventEmitter{
   }
 
   write(chunk,encoding=this.encoding,callback=()=>{},end){
+    // 注意：下面两句是针对当前执行栈
     if(this.isEnd)throw Error('write after end');
-    if(end) this.isEnd = true;    
+    if(end) this.isEnd = true;
     chunk = Buffer.isBuffer(chunk)?chunk:Buffer.from(chunk,encoding);
 
     this.length += chunk.length;
@@ -86,6 +96,10 @@ class WriteStream extends EventEmitter{
     }
 
     fs.write(this.fd,chunk,0,chunk.length,this.pos,(err,bytesWritten)=>{
+      if(end){
+        this.emit('end');
+        return this.destroy(true);
+      }
       this.length -= bytesWritten;
       this.pos += bytesWritten;
       callback(); // 清空缓存

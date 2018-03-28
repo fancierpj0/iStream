@@ -141,6 +141,17 @@ let ws = new WriteStream(path.join(__dirname,'2.txt'),{
 ws.write(1+'','utf8',()=>{
   console.log('write ok');
 })
-
+ws.write(2+'','utf8',()=>{
+  console.log('write ok');
+})
+ws.write(3+'','utf8',()=>{
+  console.log('write ok');
+})
 ws.end('ok');
+ws.on('close',()=>{
+  console.log('-close-');
+})
+ws.on('end',()=>{
+  console.log('end-')
+})
 // ws.write(2+'')
