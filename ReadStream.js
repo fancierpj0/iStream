@@ -164,6 +164,10 @@ class ReadStream extends EventEmitter{
     ws.on('drain',()=>{
       this.resume();
     });
+
+    this.on('end',()=>{
+      ws.end();
+    });
   }
 
   pause(){
